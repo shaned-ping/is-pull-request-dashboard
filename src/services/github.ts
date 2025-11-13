@@ -2,15 +2,45 @@ import { Octokit } from '@octokit/rest'
 import type { PullRequest } from '../types/github'
 import { formatDateForGitHub, getTwoWeeksAgo } from '../utils/dateUtils'
 
-// Initialize Octokit with optional auth token
+/**
+ * Octokit client instance for GitHub API interactions
+ * Initialized with authentication token from environment variables
+ *
+ * @remarks
+ * Requires VITE_GITHUB_TOKEN environment variable with scopes: repo, read:org
+ * Rate limits: 5000 requests/hour (authenticated), 60/hour (unauthenticated)
+ */
 const octokit = new Octokit({
   auth: import.meta.env.VITE_GITHUB_TOKEN,
 })
 
 /**
- * Search for pull requests by team
- * GitHub doesn't have a direct "team" search, so we'll need to search by organization
- * and filter by team members or use team mentions in PRs
+ * Search for open pull requests associated with a specific GitHub team
+ *
+ * Fetches PRs that were created within the last 2 weeks and are currently open.
+ * Uses GitHub's search API with team-based filtering.
+ *
+ * @param teamName - The GitHub team name to filter by (e.g., "is-ping-core" or "org/team-name")
+ * @returns Promise resolving to an array of pull requests matching the criteria
+ * @throws {Error} If the GitHub API request fails or authentication is invalid
+ *
+ * @remarks
+ * GitHub's team search syntax can be tricky. If this doesn't work for your setup,
+ * consider using `searchOrgPullRequests` instead or customize the query to use:
+ * - `org:organization-name` for organization-wide search
+ * - `involves:username1 involves:username2` for specific users
+ *
+ * The function automatically:
+ * - Filters to only open PRs
+ * - Limits to PRs created in the last 14 days
+ * - Sorts by creation date (newest first)
+ * - Transforms API response to match our PullRequest type
+ *
+ * @example
+ * ```typescript
+ * const prs = await searchPullRequests('is-ping-core')
+ * console.log(`Found ${prs.length} open PRs`)
+ * ```
  */
 export async function searchPullRequests(teamName: string): Promise<PullRequest[]> {
   try {
@@ -59,8 +89,28 @@ export async function searchPullRequests(teamName: string): Promise<PullRequest[
 }
 
 /**
- * Get pull requests for a specific organization
- * Alternative approach if team search doesn't work
+ * Search for open pull requests across an entire GitHub organization
+ *
+ * Alternative to team-based search. Fetches all open PRs for an organization
+ * that were created within the last 2 weeks.
+ *
+ * @param org - The GitHub organization name (e.g., "facebook", "microsoft")
+ * @returns Promise resolving to an array of pull requests from the organization
+ * @throws {Error} If the GitHub API request fails or authentication is invalid
+ *
+ * @remarks
+ * Use this function if team-based search is not working or if you want to
+ * see all PRs across the entire organization. You can then filter on the
+ * client side if needed.
+ *
+ * Note: For large organizations, this may return many results (up to 100).
+ * Consider pagination if you need more than 100 PRs.
+ *
+ * @example
+ * ```typescript
+ * const orgPrs = await searchOrgPullRequests('my-company')
+ * const teamPrs = orgPrs.filter(pr => teamMembers.includes(pr.user.login))
+ * ```
  */
 export async function searchOrgPullRequests(org: string): Promise<PullRequest[]> {
   try {
