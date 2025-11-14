@@ -210,14 +210,16 @@ export async function searchOrgPullRequests(
       query += ` created:>=${dateString}`
     }
 
-    const response = await octokit.search.issuesAndPullRequests({
+    // Use pagination to fetch ALL results, not just first 100
+    // GitHub search API returns max 1000 results total
+    const items = await octokit.paginate(octokit.search.issuesAndPullRequests, {
       q: query,
       sort: 'created',
       order: 'desc',
       per_page: 100,
     })
 
-    const pullRequests: PullRequest[] = response.data.items.map((item) => ({
+    const pullRequests: PullRequest[] = items.map((item) => ({
       id: item.id,
       number: item.number,
       title: item.title,
@@ -265,13 +267,14 @@ export async function searchOrgPullRequests(
  */
 export async function getTeamRepositories(org: string, teamSlug: string): Promise<string[]> {
   try {
-    const response = await octokit.teams.listReposInOrg({
+    // Use pagination to fetch ALL team repositories, not just first page
+    const repos = await octokit.paginate(octokit.teams.listReposInOrg, {
       org,
       team_slug: teamSlug,
       per_page: 100,
     })
 
-    return response.data.map((repo) => repo.full_name)
+    return repos.map((repo) => repo.full_name)
   } catch (error) {
     console.error('Error fetching team repositories:', error)
     throw error
