@@ -96,7 +96,7 @@ describe('PullRequestList', () => {
       isSuccess: false,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -115,7 +115,7 @@ describe('PullRequestList', () => {
       isSuccess: false,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -135,7 +135,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -154,7 +154,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={1} />)
 
@@ -172,7 +172,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={null} />)
 
@@ -190,7 +190,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -206,7 +206,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -230,7 +230,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     const { container } = render(
       <PullRequestList org="pinggolf" team="is-ping-core" days={14} />
@@ -248,7 +248,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="test-org" team="test-team" days={7} />)
 
@@ -264,7 +264,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="test-org" team="test-team" days={null} />)
 
@@ -280,7 +280,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -298,7 +298,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as UseQueryResult<PullRequest[], Error>)
+    } as unknown as UseQueryResult<PullRequest[], Error>)
 
     const { container } = render(
       <PullRequestList org="pinggolf" team="is-ping-core" days={14} />
