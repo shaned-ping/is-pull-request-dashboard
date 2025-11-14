@@ -89,6 +89,72 @@ export async function searchPullRequests(teamName: string): Promise<PullRequest[
 }
 
 /**
+ * Search for open pull requests in a specific user's repositories
+ *
+ * Fetches all open PRs from repositories owned by the specified user
+ * that were created within the last 2 weeks.
+ *
+ * @param username - The GitHub username (e.g., "shaned-ping", "torvalds")
+ * @returns Promise resolving to an array of pull requests from user's repositories
+ * @throws {Error} If the GitHub API request fails or authentication is invalid
+ *
+ * @remarks
+ * This searches only repositories owned by the user, not:
+ * - Repositories they've contributed to
+ * - Organization repositories they're part of
+ * - PRs they've created in other repos
+ *
+ * Use this for personal account PR dashboards.
+ *
+ * @example
+ * ```typescript
+ * const myPRs = await searchUserPullRequests('shaned-ping')
+ * console.log(`Found ${myPRs.length} open PRs in my repos`)
+ * ```
+ */
+export async function searchUserPullRequests(username: string): Promise<PullRequest[]> {
+  try {
+    const twoWeeksAgo = getTwoWeeksAgo()
+    const dateString = formatDateForGitHub(twoWeeksAgo)
+
+    const query = `is:pr is:open created:>=${dateString} user:${username}`
+
+    const response = await octokit.search.issuesAndPullRequests({
+      q: query,
+      sort: 'created',
+      order: 'desc',
+      per_page: 100,
+    })
+
+    const pullRequests: PullRequest[] = response.data.items.map((item) => ({
+      id: item.id,
+      number: item.number,
+      title: item.title,
+      html_url: item.html_url,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      user: {
+        login: item.user?.login || 'unknown',
+        avatar_url: item.user?.avatar_url || '',
+        html_url: item.user?.html_url || '',
+      },
+      repository: {
+        name: item.repository_url.split('/').pop() || '',
+        full_name: item.repository_url.split('/').slice(-2).join('/') || '',
+        html_url: item.repository_url.replace('api.github.com/repos', 'github.com'),
+      },
+      draft: item.draft || false,
+      state: item.state as 'open' | 'closed',
+    }))
+
+    return pullRequests
+  } catch (error) {
+    console.error('Error fetching pull requests:', error)
+    throw error
+  }
+}
+
+/**
  * Search for open pull requests across an entire GitHub organization
  *
  * Alternative to team-based search. Fetches all open PRs for an organization

@@ -2,11 +2,11 @@ import { usePullRequests } from '../hooks/usePullRequests'
 import PullRequestCard from './PullRequestCard'
 
 interface PullRequestListProps {
-  teamName: string
+  username: string
 }
 
-export default function PullRequestList({ teamName }: PullRequestListProps) {
-  const { data: pullRequests, isLoading, error } = usePullRequests(teamName)
+export default function PullRequestList({ username }: PullRequestListProps) {
+  const { data: pullRequests, isLoading, error } = usePullRequests(username)
 
   if (isLoading) {
     return <div className="loading">Loading pull requests...</div>
@@ -29,7 +29,7 @@ export default function PullRequestList({ teamName }: PullRequestListProps) {
     return (
       <div className="empty-state">
         <h2>No open pull requests</h2>
-        <p>There are no open PRs for {teamName} in the last 2 weeks.</p>
+        <p>There are no open PRs in {username}'s repositories from the last 2 weeks.</p>
       </div>
     )
   }

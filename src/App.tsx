@@ -2,16 +2,16 @@ import { useState } from 'react'
 import PullRequestList from './components/PullRequestList'
 
 function App() {
-  const [teamName] = useState('is-ping-core')
+  const [username] = useState('shaned-ping')
 
   return (
     <div className="app">
       <header className="header">
         <h1>Pull Request Dashboard</h1>
-        <p className="subtitle">Team: {teamName}</p>
+        <p className="subtitle">User: {username}</p>
       </header>
       <main className="main">
-        <PullRequestList teamName={teamName} />
+        <PullRequestList username={username} />
       </main>
     </div>
   )
