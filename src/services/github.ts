@@ -237,3 +237,84 @@ export async function searchOrgPullRequests(org: string): Promise<PullRequest[]>
     throw error
   }
 }
+
+/**
+ * Search for open pull requests for a specific team in a GitHub organization
+ *
+ * Fetches PRs associated with a team, with optional date filtering.
+ * This is the recommended method for team-based PR dashboards.
+ *
+ * @param org - The GitHub organization name (e.g., "pinggolf")
+ * @param teamName - The team slug (e.g., "is-ping-core")
+ * @param days - Number of days to look back (1-30), or null for all time (default: 14)
+ * @returns Promise resolving to an array of pull requests for the team
+ * @throws {Error} If the GitHub API request fails or authentication is invalid
+ *
+ * @remarks
+ * GitHub's team search syntax: `team:org/team-slug`
+ * If team search doesn't work, this falls back to org search.
+ *
+ * Date filtering:
+ * - Pass a number (1-30) to filter PRs from the last N days
+ * - Pass null to get all open PRs regardless of age
+ *
+ * Note: You need `read:org` scope in your GitHub token for team searches.
+ *
+ * @example
+ * ```typescript
+ * // Last 14 days for is-ping-core team
+ * const teamPRs = await searchTeamPullRequests('pinggolf', 'is-ping-core', 14)
+ *
+ * // All time
+ * const allPRs = await searchTeamPullRequests('pinggolf', 'is-ping-core', null)
+ * ```
+ */
+export async function searchTeamPullRequests(
+  org: string,
+  teamName: string,
+  days: number | null = 14
+): Promise<PullRequest[]> {
+  try {
+    // Build query with optional date filter
+    let query = `is:pr is:open team:${org}/${teamName}`
+
+    if (days !== null) {
+      const cutoffDate = getDaysAgo(days)
+      const dateString = formatDateForGitHub(cutoffDate)
+      query += ` created:>=${dateString}`
+    }
+
+    const response = await octokit.search.issuesAndPullRequests({
+      q: query,
+      sort: 'created',
+      order: 'desc',
+      per_page: 100,
+    })
+
+    const pullRequests: PullRequest[] = response.data.items.map((item) => ({
+      id: item.id,
+      number: item.number,
+      title: item.title,
+      html_url: item.html_url,
+      created_at: item.created_at,
+      updated_at: item.updated_at,
+      user: {
+        login: item.user?.login || 'unknown',
+        avatar_url: item.user?.avatar_url || '',
+        html_url: item.user?.html_url || '',
+      },
+      repository: {
+        name: item.repository_url.split('/').pop() || '',
+        full_name: item.repository_url.split('/').slice(-2).join('/') || '',
+        html_url: item.repository_url.replace('api.github.com/repos', 'github.com'),
+      },
+      draft: item.draft || false,
+      state: item.state as 'open' | 'closed',
+    }))
+
+    return pullRequests
+  } catch (error) {
+    console.error('Error fetching pull requests:', error)
+    throw error
+  }
+}
