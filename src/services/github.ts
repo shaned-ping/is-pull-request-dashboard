@@ -196,12 +196,19 @@ export async function searchUserPullRequests(
  * const teamPrs = orgPrs.filter(pr => teamMembers.includes(pr.user.login))
  * ```
  */
-export async function searchOrgPullRequests(org: string): Promise<PullRequest[]> {
+export async function searchOrgPullRequests(
+  org: string,
+  days: number | null = 14
+): Promise<PullRequest[]> {
   try {
-    const twoWeeksAgo = getTwoWeeksAgo()
-    const dateString = formatDateForGitHub(twoWeeksAgo)
+    // Build query with optional date filter
+    let query = `is:pr is:open org:${org}`
 
-    const query = `is:pr is:open created:>=${dateString} org:${org}`
+    if (days !== null) {
+      const cutoffDate = getDaysAgo(days)
+      const dateString = formatDateForGitHub(cutoffDate)
+      query += ` created:>=${dateString}`
+    }
 
     const response = await octokit.search.issuesAndPullRequests({
       q: query,
@@ -239,9 +246,42 @@ export async function searchOrgPullRequests(org: string): Promise<PullRequest[]>
 }
 
 /**
+ * Get list of repositories that a team has access to
+ *
+ * @param org - The GitHub organization name (e.g., "pinggolf")
+ * @param teamSlug - The team slug (e.g., "is-ping-core")
+ * @returns Promise resolving to an array of repository full names (e.g., ["pinggolf/repo1", "pinggolf/repo2"])
+ * @throws {Error} If the GitHub API request fails or authentication is invalid
+ *
+ * @remarks
+ * Requires `read:org` scope in your GitHub token.
+ * Returns all repositories the team has any level of access to.
+ *
+ * @example
+ * ```typescript
+ * const repos = await getTeamRepositories('pinggolf', 'is-ping-core')
+ * // Returns: ["pinggolf/is-ping-services", "pinggolf/is-ping-web", ...]
+ * ```
+ */
+export async function getTeamRepositories(org: string, teamSlug: string): Promise<string[]> {
+  try {
+    const response = await octokit.teams.listReposInOrg({
+      org,
+      team_slug: teamSlug,
+      per_page: 100,
+    })
+
+    return response.data.map((repo) => repo.full_name)
+  } catch (error) {
+    console.error('Error fetching team repositories:', error)
+    throw error
+  }
+}
+
+/**
  * Search for open pull requests for a specific team in a GitHub organization
  *
- * Fetches PRs associated with a team, with optional date filtering.
+ * Fetches PRs from repositories that the team has access to, with optional date filtering.
  * This is the recommended method for team-based PR dashboards.
  *
  * @param org - The GitHub organization name (e.g., "pinggolf")
@@ -251,14 +291,15 @@ export async function searchOrgPullRequests(org: string): Promise<PullRequest[]>
  * @throws {Error} If the GitHub API request fails or authentication is invalid
  *
  * @remarks
- * GitHub's team search syntax: `team:org/team-slug`
- * If team search doesn't work, this falls back to org search.
+ * This function:
+ * 1. Gets the list of repositories the team has access to
+ * 2. Searches for open PRs in those repositories
  *
  * Date filtering:
  * - Pass a number (1-30) to filter PRs from the last N days
  * - Pass null to get all open PRs regardless of age
  *
- * Note: You need `read:org` scope in your GitHub token for team searches.
+ * Note: You need `read:org` scope in your GitHub token.
  *
  * @example
  * ```typescript
@@ -275,8 +316,16 @@ export async function searchTeamPullRequests(
   days: number | null = 14
 ): Promise<PullRequest[]> {
   try {
-    // Build query with optional date filter
-    let query = `is:pr is:open team:${org}/${teamName}`
+    // First, get the list of repositories the team has access to
+    const teamRepos = await getTeamRepositories(org, teamName)
+
+    if (teamRepos.length === 0) {
+      return []
+    }
+
+    // Build query with repo filters and optional date filter
+    const repoQueries = teamRepos.map((repo) => `repo:${repo}`).join(' ')
+    let query = `is:pr is:open ${repoQueries}`
 
     if (days !== null) {
       const cutoffDate = getDaysAgo(days)

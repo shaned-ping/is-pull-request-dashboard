@@ -21,7 +21,7 @@ export default function PullRequestList({ org, team, days }: PullRequestListProp
         <p>{error.message}</p>
         <p>
           Make sure you have set the VITE_GITHUB_TOKEN environment variable
-          with the <code>read:org</code> scope for team searches.
+          with the <code>repo</code> and <code>read:org</code> scopes.
         </p>
       </div>
     )
