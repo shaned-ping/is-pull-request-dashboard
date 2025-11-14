@@ -5,9 +5,10 @@ This file helps AI assistants (like Claude) understand the codebase structure, c
 ## Project Overview
 
 **Name:** PR Dashboard
-**Purpose:** Monitor open pull requests for the is-ping-core team
-**Tech Stack:** React 18, TypeScript, Vite, React Query, Octokit
+**Purpose:** Monitor open pull requests for GitHub teams based on team repository access
+**Tech Stack:** React 18, TypeScript, Vite, React Query, Octokit, Vitest
 **Target Platforms:** Web (primary), PWA for mobile
+**Current Configuration:** Monitors pinggolf/is-ping-core team (configurable)
 
 ## Project Structure
 
@@ -15,16 +16,19 @@ This file helps AI assistants (like Claude) understand the codebase structure, c
 is-pull-request-dashboard/
 ├── src/
 │   ├── components/          # React UI components
+│   │   ├── FilterControl.tsx      # Date filter dropdown component
 │   │   ├── PullRequestCard.tsx    # Individual PR card component
 │   │   └── PullRequestList.tsx    # PR list container with data fetching
 │   ├── hooks/              # Custom React hooks
-│   │   └── usePullRequests.ts     # Hook for fetching PRs with React Query
+│   │   └── usePullRequests.ts     # React Query hooks (user, team, org searches)
 │   ├── services/           # External API services
 │   │   └── github.ts              # GitHub API integration via Octokit
 │   ├── types/              # TypeScript type definitions
 │   │   └── github.ts              # GitHub-related types
 │   ├── utils/              # Utility functions
 │   │   └── dateUtils.ts           # Date formatting and filtering utilities
+│   ├── test/               # Test configuration
+│   │   └── setup.ts               # Vitest setup file
 │   ├── App.tsx             # Root application component
 │   ├── main.tsx            # Application entry point with providers
 │   ├── index.css           # Global styles
@@ -35,6 +39,7 @@ is-pull-request-dashboard/
 ├── package.json            # Dependencies and scripts
 ├── tsconfig.json           # TypeScript configuration
 ├── vite.config.ts          # Vite and PWA configuration
+├── vitest.config.ts        # Vitest test configuration
 ├── eslint.config.js        # ESLint configuration (flat config)
 └── .prettierrc             # Prettier configuration
 ```
@@ -80,40 +85,72 @@ is-pull-request-dashboard/
 
 ### PR Filtering Rules
 1. **Status:** Only open PRs (`is:pr is:open`)
-2. **Time window:** Created within last 14 days
-3. **Team filter:** Associated with `is-ping-core` team (configurable)
+2. **Time window:** Configurable (7/14/30 days or all time), default 14 days
+3. **Team filter:** PRs from repositories the team has access to
 4. **Sort order:** Most recently created first
+
+### Team-Based Search Approach
+The dashboard uses a two-step process to find relevant PRs:
+
+1. **Fetch team repositories** via `getTeamRepositories(org, teamSlug)`
+   - Uses GitHub Teams API: `GET /orgs/{org}/teams/{team_slug}/repos`
+   - Supports pagination for teams with 100+ repos
+   - Returns array of repository full names (e.g., `["pinggolf/repo1", "pinggolf/repo2"]`)
+
+2. **Fetch org PRs and filter** via `searchTeamPullRequests(org, team, days)`
+   - Fetches ALL open PRs in the organization with `searchOrgPullRequests(org, days)`
+   - Uses pagination to fetch up to 1000 PRs (GitHub limit)
+   - Filters client-side using Set for O(1) lookup: `teamRepoSet.has(pr.repository.full_name)`
+
+**Why this approach?**
+- ✅ Avoids GitHub query length limits (would exceed with 100+ repos)
+- ✅ Includes ALL PRs in team repos (external contributors, dependabot, cross-team)
+- ✅ Scalable and performant with parallel API calls
 
 ### Date Handling
 - All dates stored as ISO 8601 strings from GitHub API
 - Display using relative time (e.g., "3 days ago") via `date-fns`
 - Filtering uses date comparison in `dateUtils.ts`
+- User preference saved to localStorage
 
 ### Data Flow
-1. Component mounts → `usePullRequests` hook triggered
-2. Hook calls `searchPullRequests()` from `github.ts`
-3. Octokit makes GitHub API request
-4. Response transformed to match `PullRequest` type
-5. React Query caches result and manages refetch
-6. Component renders with data
+1. Component mounts → `useTeamPullRequests` hook triggered
+2. Hook calls `searchTeamPullRequests(org, team, days)` from `github.ts`
+3. Two parallel API calls:
+   - `getTeamRepositories()` - Fetch team's repos
+   - `searchOrgPullRequests()` - Fetch org's open PRs
+4. Client-side filtering: PRs filtered by team repository membership
+5. Response transformed to match `PullRequest` type
+6. React Query caches result (5 min stale time, auto-refetch)
+7. Component renders with filtered data
 
 ## Important Files
 
 ### `src/services/github.ts`
-**Purpose:** GitHub API integration
+**Purpose:** GitHub API integration via Octokit
 **Key functions:**
-- `searchPullRequests(teamName)` - Main PR search function
-- `searchOrgPullRequests(org)` - Alternative org-based search
+- `getTeamRepositories(org, teamSlug)` - Fetches all repos team has access to
+- `searchTeamPullRequests(org, team, days)` - **Primary function** - Team-based PR search
+- `searchOrgPullRequests(org, days)` - Fetches all org PRs with pagination
+- `searchUserPullRequests(username, days)` - User-based PR search (legacy support)
 
-**⚠️ Configuration needed:** The GitHub search query may need customization based on your org structure.
+**Implementation details:**
+- Uses `octokit.paginate()` for fetching all results (handles 100+ repos/PRs)
+- Parallel API calls for performance
+- Client-side filtering using Set for O(1) lookup
 
 ### `src/hooks/usePullRequests.ts`
-**Purpose:** React Query hook for PR data
+**Purpose:** React Query hooks for PR data
+**Key hooks:**
+- `useTeamPullRequests(org, team, days)` - **Primary hook** - Team-based search
+- `useOrgPullRequests(org, days)` - Organization-wide search
+- `usePullRequests(username, days)` - User-based search (legacy support)
+
 **Features:**
 - Auto-refetch every 5 minutes
 - 2-minute stale time
-- Error handling
-- Loading states
+- Error handling and loading states
+- Automatic caching and deduplication
 
 ### `vite.config.ts`
 **Purpose:** Build configuration
@@ -152,38 +189,76 @@ VITE_GITHUB_TOKEN=<GitHub Personal Access Token>
 
 ## Testing Strategy
 
-**Current state:** No tests yet (TODO)
+**Current state:** Partial test coverage
 
-**Recommended approach:**
-- **Unit tests:** Vitest for utilities and pure functions
-- **Component tests:** React Testing Library
-- **E2E tests:** Playwright or Cypress
-- **API mocking:** MSW (Mock Service Worker)
+**Existing tests:**
+- ✅ `dateUtils.test.ts` - 19 tests for date utility functions
+- ✅ `FilterControl.test.tsx` - 10 tests for date filter component
+- ✅ `PullRequestCard.test.tsx` - 15 tests for PR card component
+
+**Missing coverage (TODO):**
+- ❌ `services/github.ts` - No tests for API functions
+- ❌ `hooks/usePullRequests.ts` - No tests for React Query hooks
+- ❌ `components/PullRequestList.tsx` - No tests for main container
+
+**Testing tools:**
+- **Test runner:** Vitest
+- **Component testing:** React Testing Library
+- **DOM environment:** jsdom
+- **Assertions:** Vitest expect + @testing-library/jest-dom
+
+**Recommended approach for new tests:**
+- **Unit tests:** Mock Octokit responses for service functions
+- **Hook tests:** Use React Query testing utilities
+- **Component tests:** Mock hooks, test rendering and user interactions
+- **E2E tests:** Consider Playwright for full integration tests
 
 ## Performance Considerations
 
-- **React Query caching** reduces API calls
-- **Vite code splitting** for faster loads
-- **PWA caching** for offline support
-- **Image optimization** for avatars (GitHub CDN)
+- **React Query caching** - 5-minute refetch interval reduces API calls
+- **Parallel API requests** - Team repos and org PRs fetched simultaneously
+- **Client-side filtering** - Uses Set for O(1) lookup performance
+- **Pagination** - Fetches all results efficiently with `octokit.paginate()`
+- **Vite code splitting** - Optimized bundle size for faster loads
+- **PWA caching** - Service worker enables offline support
+- **Image optimization** - Avatar images served from GitHub CDN
+
+**Scalability:**
+- Handles teams with 100+ repositories
+- Supports orgs with up to 1000 open PRs (GitHub search limit)
+- No query length limitations
 
 ## Common Gotchas
 
-1. **GitHub API rate limits** - Authenticated requests get 5000/hour
-2. **Team search syntax** - GitHub's team search can be tricky, may need org search instead
-3. **CORS** - GitHub API has proper CORS headers, no proxy needed
-4. **Date timezones** - All dates in UTC, formatted for display
+1. **GitHub API rate limits** - Authenticated requests get 5000/hour. Teams with many repos will use more quota.
+2. **Team search syntax** - GitHub's `team:org/team` search is unreliable. Use repository-based filtering instead.
+3. **Query length limits** - GitHub search queries have ~256 char limit. Avoid building queries with many `repo:` filters.
+4. **Pagination required** - Always use `octokit.paginate()` for complete results (teams often have 100+ repos).
+5. **Search API limits** - GitHub search returns max 1000 results. For orgs with >1000 open PRs, some may not appear.
+6. **Token scopes** - Requires both `repo` and `read:org` scopes for team repository access.
+7. **CORS** - GitHub API has proper CORS headers, no proxy needed.
+8. **Date timezones** - All dates in UTC, formatted for display with relative time.
 
 ## Future Enhancements
 
+Completed features:
+- [x] Configurable date filter (7/14/30 days, all time)
+- [x] Team-based repository filtering
+- [x] Support for teams with 100+ repositories
+- [x] Pagination for complete results
+
 Potential features to add:
-- [ ] User authentication (OAuth)
-- [ ] Filter by repository
-- [ ] Filter by author
-- [ ] PR status indicators (reviews, checks)
-- [ ] Notification system
-- [ ] Multiple team support
-- [ ] Dark/light mode toggle (currently auto-detects)
+- [ ] User authentication (OAuth/Azure AD)
+- [ ] Filter by specific repository (dropdown)
+- [ ] Filter by author (team members only toggle)
+- [ ] PR status indicators (reviews, CI checks, mergeable status)
+- [ ] Sort options (created date, updated date, number of comments)
+- [ ] Notification system (browser notifications for new PRs)
+- [ ] Multiple team support (compare across teams)
+- [ ] Dark/light mode toggle (currently auto-detects via prefers-color-scheme)
+- [ ] Export to CSV/JSON
+- [ ] PR aging indicators (visual cues for stale PRs)
+- [ ] Comprehensive test coverage for services and hooks
 
 ## Related Documentation
 

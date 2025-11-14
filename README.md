@@ -1,16 +1,18 @@
 # Pull Request Dashboard
 
-A modern web application for monitoring open pull requests for the is-ping-core team. Built with React, TypeScript, and Vite, this dashboard provides a clean interface to track PRs that have been open for 2 weeks or less.
+A modern web application for monitoring open pull requests for GitHub teams. Built with React, TypeScript, and Vite, this dashboard provides a clean interface to track PRs from repositories your team has access to.
 
 ## Features
 
 - 📊 Real-time PR monitoring with automatic refresh
-- 🔍 Filters PRs from the last 2 weeks
+- 🔍 Configurable date filters (7/14/30 days or all time)
+- 👥 Team-based repository filtering
 - 📱 Progressive Web App (PWA) support
 - 🎨 Clean, responsive UI with dark/light mode
-- ⚡ Fast performance with Vite
+- ⚡ Fast performance with Vite and React Query caching
 - 🔄 Auto-refresh every 5 minutes
 - 📦 Built with industry-standard tools and practices
+- 🚀 Supports teams with 100+ repositories
 
 ## Tech Stack
 
@@ -82,6 +84,10 @@ Open your browser to the URL shown (typically http://localhost:5173)
 - `npm run lint:fix` - Fix ESLint errors
 - `npm run format` - Format code with Prettier
 - `npm run type-check` - Run TypeScript type checking
+- `npm run test` - Run tests in watch mode
+- `npm run test:ui` - Run tests with UI
+- `npm run test:run` - Run tests once
+- `npm run test:coverage` - Run tests with coverage report
 
 ## Project Structure
 
@@ -89,46 +95,66 @@ Open your browser to the URL shown (typically http://localhost:5173)
 is-pull-request-dashboard/
 ├── src/
 │   ├── components/        # React components
-│   │   ├── PullRequestCard.tsx
-│   │   └── PullRequestList.tsx
+│   │   ├── FilterControl.tsx      # Date filter dropdown
+│   │   ├── PullRequestCard.tsx    # Individual PR card
+│   │   └── PullRequestList.tsx    # PR list container
 │   ├── hooks/            # Custom React hooks
-│   │   └── usePullRequests.ts
+│   │   └── usePullRequests.ts     # React Query hooks for PR data
 │   ├── services/         # API services
-│   │   └── github.ts
+│   │   └── github.ts              # GitHub API integration via Octokit
 │   ├── types/            # TypeScript type definitions
-│   │   └── github.ts
+│   │   └── github.ts              # GitHub-related types
 │   ├── utils/            # Utility functions
-│   │   └── dateUtils.ts
+│   │   └── dateUtils.ts           # Date formatting and filtering
+│   ├── test/             # Test configuration
+│   │   └── setup.ts               # Vitest setup
 │   ├── App.tsx           # Main app component
 │   ├── main.tsx          # Application entry point
 │   ├── index.css         # Global styles
-│   └── vite-env.d.ts     # Vite environment types
+│   └── vite-env.d.ts     # Vite environment type definitions
 ├── public/               # Static assets
 ├── .env.example          # Example environment variables
-├── eslint.config.js      # ESLint configuration
+├── eslint.config.js      # ESLint configuration (flat config)
 ├── .prettierrc           # Prettier configuration
 ├── tsconfig.json         # TypeScript configuration
-├── vite.config.ts        # Vite configuration
+├── vite.config.ts        # Vite and PWA configuration
+├── vitest.config.ts      # Vitest test configuration
 └── package.json          # Dependencies and scripts
 ```
 
 ## Configuration
 
-### Customizing the Team
+### Customizing the Organization and Team
 
-By default, the dashboard searches for PRs associated with the `is-ping-core` team. To customize this, edit `src/App.tsx`:
+By default, the dashboard monitors PRs for the `pinggolf` organization's `is-ping-core` team. To customize this, edit `src/App.tsx`:
 
 ```typescript
-const [teamName] = useState('your-team-name')
+const [org] = useState('your-org-name')
+const [team] = useState('your-team-slug')
 ```
 
-### GitHub API Query
+### How It Works
 
-The GitHub API query in `src/services/github.ts` uses the team search. You may need to adjust this based on your organization structure:
+The dashboard uses a two-step approach to fetch team-relevant PRs:
 
-- For team-based search: `team:org/team-name`
-- For organization search: `org:organization-name`
-- For specific users: `involves:username1 involves:username2`
+1. **Fetch team repositories**: Uses GitHub's Teams API to get all repositories the team has access to
+2. **Fetch and filter PRs**: Fetches all open PRs in the organization and filters them to only show PRs from team repositories
+
+This approach:
+- ✅ Handles teams with 100+ repositories without query length issues
+- ✅ Shows all PRs in team repos (including from external contributors, dependabot, etc.)
+- ✅ Supports pagination to fetch all results (up to GitHub's 1000 PR limit)
+- ✅ Uses client-side filtering for efficient performance
+
+### Date Filtering
+
+Users can filter PRs by creation date:
+- **Last 7 days** - Recent activity
+- **Last 14 days** - Default view
+- **Last 30 days** - Monthly overview
+- **All time** - Complete history of open PRs
+
+Filter preference is saved to browser localStorage and persists across sessions.
 
 ## Building for Production
 
