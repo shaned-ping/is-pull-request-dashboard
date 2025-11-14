@@ -417,7 +417,7 @@ describe('github service', () => {
 
     beforeEach(() => {
       // Mock both API calls
-      mockPaginate.mockImplementation((fn: any) => {
+      mockPaginate.mockImplementation((fn: unknown) => {
         if (fn === mockListReposInOrg) {
           return Promise.resolve(
             mockTeamRepos.map((name) => ({ full_name: name }))
@@ -459,7 +459,7 @@ describe('github service', () => {
     })
 
     it('should return empty array when team has no repositories', async () => {
-      mockPaginate.mockImplementation((fn: any) => {
+      mockPaginate.mockImplementation((fn: unknown) => {
         if (fn === mockListReposInOrg) {
           return Promise.resolve([])
         }
@@ -472,7 +472,7 @@ describe('github service', () => {
     })
 
     it('should handle case when org has PRs but none in team repos', async () => {
-      mockPaginate.mockImplementation((fn: any) => {
+      mockPaginate.mockImplementation((fn: unknown) => {
         if (fn === mockListReposInOrg) {
           return Promise.resolve([{ full_name: 'pinggolf/other-repo' }])
         }
@@ -528,7 +528,7 @@ describe('github service', () => {
       // Reset mocks and set up for this specific test
       // First paginate call (team repos) succeeds, second (org PRs) fails
       let callCount = 0
-      mockPaginate.mockImplementation((fn: any) => {
+      mockPaginate.mockImplementation((fn: unknown) => {
         callCount++
         if (callCount === 1 && fn === mockListReposInOrg) {
           return Promise.resolve(mockTeamRepos.map((name) => ({ full_name: name })))

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import PullRequestList from './PullRequestList'
+import type { PullRequest } from '../types/github'
+import type { UseQueryResult } from '@tanstack/react-query'
 
 // Mock the hooks module
 vi.mock('../hooks/usePullRequests', () => ({
@@ -9,7 +11,9 @@ vi.mock('../hooks/usePullRequests', () => ({
 
 // Mock the PullRequestCard component
 vi.mock('./PullRequestCard', () => ({
-  default: ({ pr }: any) => <div data-testid={`pr-card-${pr.id}`}>{pr.title}</div>,
+  default: ({ pr }: { pr: PullRequest }) => (
+    <div data-testid={`pr-card-${pr.id}`}>{pr.title}</div>
+  ),
 }))
 
 import { useTeamPullRequests } from '../hooks/usePullRequests'
@@ -92,7 +96,7 @@ describe('PullRequestList', () => {
       isSuccess: false,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -111,7 +115,7 @@ describe('PullRequestList', () => {
       isSuccess: false,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -131,7 +135,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -150,7 +154,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={1} />)
 
@@ -168,7 +172,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={null} />)
 
@@ -186,7 +190,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -202,7 +206,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -226,7 +230,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     const { container } = render(
       <PullRequestList org="pinggolf" team="is-ping-core" days={14} />
@@ -244,7 +248,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="test-org" team="test-team" days={7} />)
 
@@ -260,7 +264,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="test-org" team="test-team" days={null} />)
 
@@ -276,7 +280,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     render(<PullRequestList org="pinggolf" team="is-ping-core" days={14} />)
 
@@ -294,7 +298,7 @@ describe('PullRequestList', () => {
       isSuccess: true,
       refetch: vi.fn(),
       isRefetching: false,
-    } as any)
+    } as UseQueryResult<PullRequest[], Error>)
 
     const { container } = render(
       <PullRequestList org="pinggolf" team="is-ping-core" days={14} />
