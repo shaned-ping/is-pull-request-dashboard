@@ -368,7 +368,7 @@ describe('github service', () => {
         repository: {
           name: 'repo1',
           full_name: 'pinggolf/repo1',
-          html_url: 'https://github.com/repos/pinggolf/repo1',
+          html_url: 'https://github.com/pinggolf/repo1',
         },
         draft: false,
         state: 'open',
@@ -388,7 +388,7 @@ describe('github service', () => {
         repository: {
           name: 'repo3',
           full_name: 'pinggolf/repo3',
-          html_url: 'https://github.com/repos/pinggolf/repo3',
+          html_url: 'https://github.com/pinggolf/repo3',
         },
         draft: false,
         state: 'open',
@@ -408,7 +408,7 @@ describe('github service', () => {
         repository: {
           name: 'repo2',
           full_name: 'pinggolf/repo2',
-          html_url: 'https://github.com/repos/pinggolf/repo2',
+          html_url: 'https://github.com/pinggolf/repo2',
         },
         draft: true,
         state: 'open',
