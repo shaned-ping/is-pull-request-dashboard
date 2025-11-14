@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest'
 import type { PullRequest } from '../types/github'
-import { formatDateForGitHub, getTwoWeeksAgo } from '../utils/dateUtils'
+import { formatDateForGitHub, getDaysAgo } from '../utils/dateUtils'
 
 /**
  * Octokit client instance for GitHub API interactions
@@ -91,10 +91,11 @@ export async function searchPullRequests(teamName: string): Promise<PullRequest[
 /**
  * Search for open pull requests in a specific user's repositories
  *
- * Fetches all open PRs from repositories owned by the specified user
- * that were created within the last 2 weeks.
+ * Fetches all open PRs from repositories owned by the specified user,
+ * optionally filtered by creation date.
  *
  * @param username - The GitHub username (e.g., "shaned-ping", "torvalds")
+ * @param days - Number of days to look back (1-30), or null for all time (default: 14)
  * @returns Promise resolving to an array of pull requests from user's repositories
  * @throws {Error} If the GitHub API request fails or authentication is invalid
  *
@@ -106,18 +107,35 @@ export async function searchPullRequests(teamName: string): Promise<PullRequest[
  *
  * Use this for personal account PR dashboards.
  *
+ * Date filtering:
+ * - Pass a number (1-30) to filter PRs from the last N days
+ * - Pass null to get all open PRs regardless of age
+ *
  * @example
  * ```typescript
- * const myPRs = await searchUserPullRequests('shaned-ping')
- * console.log(`Found ${myPRs.length} open PRs in my repos`)
+ * // Last 7 days
+ * const weekPRs = await searchUserPullRequests('shaned-ping', 7)
+ *
+ * // Last 14 days (default)
+ * const defaultPRs = await searchUserPullRequests('shaned-ping', 14)
+ *
+ * // All time
+ * const allPRs = await searchUserPullRequests('shaned-ping', null)
  * ```
  */
-export async function searchUserPullRequests(username: string): Promise<PullRequest[]> {
+export async function searchUserPullRequests(
+  username: string,
+  days: number | null = 14
+): Promise<PullRequest[]> {
   try {
-    const twoWeeksAgo = getTwoWeeksAgo()
-    const dateString = formatDateForGitHub(twoWeeksAgo)
+    // Build query with optional date filter
+    let query = `is:pr is:open user:${username}`
 
-    const query = `is:pr is:open created:>=${dateString} user:${username}`
+    if (days !== null) {
+      const cutoffDate = getDaysAgo(days)
+      const dateString = formatDateForGitHub(cutoffDate)
+      query += ` created:>=${dateString}`
+    }
 
     const response = await octokit.search.issuesAndPullRequests({
       q: query,

@@ -9,6 +9,7 @@ import type { PullRequest } from '../types/github'
  * for pull requests in a specific user's repositories.
  *
  * @param username - The GitHub username to fetch pull requests for
+ * @param days - Number of days to look back (1-30), or null for all time (default: 14)
  * @returns React Query result object with the following properties:
  *   - data: Array of pull requests (undefined if loading or error)
  *   - isLoading: Boolean indicating initial load state
@@ -18,10 +19,11 @@ import type { PullRequest } from '../types/github'
  *
  * @remarks
  * Caching strategy:
- * - Data is cached by username
+ * - Data is cached by username and days filter
  * - Considered stale after 2 minutes
  * - Automatically refetches every 5 minutes in the background
  * - Cache persists across component remounts
+ * - Changing the days filter will fetch new data
  *
  * Error handling:
  * - Network errors are caught and exposed via error property
@@ -30,8 +32,8 @@ import type { PullRequest } from '../types/github'
  *
  * @example
  * ```typescript
- * function PullRequestList({ username }: Props) {
- *   const { data, isLoading, error, refetch } = usePullRequests(username)
+ * function PullRequestList({ username, days }: Props) {
+ *   const { data, isLoading, error, refetch } = usePullRequests(username, days)
  *
  *   if (isLoading) return <div>Loading...</div>
  *   if (error) return <div>Error: {error.message}</div>
@@ -46,10 +48,10 @@ import type { PullRequest } from '../types/github'
  * }
  * ```
  */
-export function usePullRequests(username: string) {
+export function usePullRequests(username: string, days: number | null = 14) {
   return useQuery<PullRequest[], Error>({
-    queryKey: ['pullRequests', username],
-    queryFn: () => searchUserPullRequests(username),
+    queryKey: ['pullRequests', username, days],
+    queryFn: () => searchUserPullRequests(username, days),
     // Refetch every 5 minutes to keep data up-to-date
     refetchInterval: 1000 * 60 * 5,
     // Consider data stale after 2 minutes
