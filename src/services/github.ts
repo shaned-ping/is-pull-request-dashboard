@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest'
 import type { PullRequest } from '../types/github'
-import { formatDateForGitHub, getDaysAgo } from '../utils/dateUtils'
+import { formatDateForGitHub, getDaysAgo, getTwoWeeksAgo } from '../utils/dateUtils'
 
 /**
  * Octokit client instance for GitHub API interactions
