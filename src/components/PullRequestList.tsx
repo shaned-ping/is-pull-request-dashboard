@@ -1,13 +1,14 @@
-import { usePullRequests } from '../hooks/usePullRequests'
+import { useTeamPullRequests } from '../hooks/usePullRequests'
 import PullRequestCard from './PullRequestCard'
 
 interface PullRequestListProps {
-  username: string
+  org: string
+  team: string
   days: number | null
 }
 
-export default function PullRequestList({ username, days }: PullRequestListProps) {
-  const { data: pullRequests, isLoading, error } = usePullRequests(username, days)
+export default function PullRequestList({ org, team, days }: PullRequestListProps) {
+  const { data: pullRequests, isLoading, error } = useTeamPullRequests(org, team, days)
 
   if (isLoading) {
     return <div className="loading">Loading pull requests...</div>
@@ -20,7 +21,7 @@ export default function PullRequestList({ username, days }: PullRequestListProps
         <p>{error.message}</p>
         <p>
           Make sure you have set the VITE_GITHUB_TOKEN environment variable
-          and have the necessary permissions.
+          with the <code>repo</code> and <code>read:org</code> scopes.
         </p>
       </div>
     )
@@ -33,7 +34,7 @@ export default function PullRequestList({ username, days }: PullRequestListProps
     return (
       <div className="empty-state">
         <h2>No open pull requests</h2>
-        <p>There are no open PRs in {username}'s repositories {timeframeText}.</p>
+        <p>There are no open PRs for the {team} team {timeframeText}.</p>
       </div>
     )
   }
