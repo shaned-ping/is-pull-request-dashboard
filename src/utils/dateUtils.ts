@@ -1,10 +1,30 @@
 import { formatDistanceToNow } from 'date-fns'
 
 /**
+ * Calculate the date from a specified number of days ago
+ *
+ * Used for filtering pull requests based on configurable time ranges.
+ *
+ * @param days - Number of days to go back (e.g., 7, 14, 30)
+ * @returns Date object representing the specified number of days before the current date/time
+ *
+ * @example
+ * ```typescript
+ * const lastWeek = getDaysAgo(7)
+ * const lastMonth = getDaysAgo(30)
+ * ```
+ */
+export function getDaysAgo(days: number): Date {
+  const date = new Date()
+  date.setDate(date.getDate() - days)
+  return date
+}
+
+/**
  * Calculate the date from exactly 2 weeks (14 days) ago
  *
  * Used primarily for filtering pull requests to show only those created
- * within the last 2 weeks.
+ * within the last 2 weeks. This is a convenience wrapper around getDaysAgo(14).
  *
  * @returns Date object representing 14 days before the current date/time
  *
@@ -15,9 +35,7 @@ import { formatDistanceToNow } from 'date-fns'
  * ```
  */
 export function getTwoWeeksAgo(): Date {
-  const date = new Date()
-  date.setDate(date.getDate() - 14)
-  return date
+  return getDaysAgo(14)
 }
 
 /**

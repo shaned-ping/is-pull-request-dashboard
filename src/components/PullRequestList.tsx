@@ -3,10 +3,11 @@ import PullRequestCard from './PullRequestCard'
 
 interface PullRequestListProps {
   username: string
+  days: number | null
 }
 
-export default function PullRequestList({ username }: PullRequestListProps) {
-  const { data: pullRequests, isLoading, error } = usePullRequests(username)
+export default function PullRequestList({ username, days }: PullRequestListProps) {
+  const { data: pullRequests, isLoading, error } = usePullRequests(username, days)
 
   if (isLoading) {
     return <div className="loading">Loading pull requests...</div>
@@ -26,10 +27,13 @@ export default function PullRequestList({ username }: PullRequestListProps) {
   }
 
   if (!pullRequests || pullRequests.length === 0) {
+    const timeframeText =
+      days === null ? 'at any time' : days === 1 ? 'from the last day' : `from the last ${days} days`
+
     return (
       <div className="empty-state">
         <h2>No open pull requests</h2>
-        <p>There are no open PRs in {username}'s repositories from the last 2 weeks.</p>
+        <p>There are no open PRs in {username}'s repositories {timeframeText}.</p>
       </div>
     )
   }
