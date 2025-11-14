@@ -11,6 +11,9 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
+        // Enable single fork mode to improve jsdom 27.x compatibility in CI environments.
+        // This prevents "Cannot read properties of undefined" errors when running tests
+        // in GitHub Actions. See: https://github.com/vitest-dev/vitest/issues/4043
         singleFork: true,
       },
     },
